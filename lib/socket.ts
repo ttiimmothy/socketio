@@ -76,7 +76,7 @@ export interface EventEmitterReservedEventsMap {
 
 export const RESERVED_EVENTS: ReadonlySet<string | Symbol> = new Set<
   | ClientReservedEvents
-  | keyof NamespaceReservedEventsMap<never, never, never, never>
+  | keyof NamespaceReservedEventsMap<never, never, never, never, never>
   | keyof SocketReservedEventsMap
   | keyof EventEmitterReservedEventsMap
 >(<const>[
@@ -180,7 +180,8 @@ export class Socket<
   ListenEvents extends EventsMap = DefaultEventsMap,
   EmitEvents extends EventsMap = ListenEvents,
   ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any
+  SocketData = any,
+  AdditionalRequestData = Record<string, never>
 > extends StrictEventEmitter<
   ListenEvents,
   EmitEvents,
@@ -231,7 +232,8 @@ export class Socket<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >;
   private readonly adapter: Adapter;
   private acks: Map<number, () => void> = new Map();
@@ -249,8 +251,20 @@ export class Socket<
    * @package
    */
   constructor(
-    readonly nsp: Namespace<ListenEvents, EmitEvents, ServerSideEvents>,
-    readonly client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
+    readonly nsp: Namespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
+    readonly client: Client<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     auth: Record<string, unknown>,
     previousSession?: Session
   ) {
@@ -898,7 +912,8 @@ export class Socket<
     ListenEvents,
     DecorateAcknowledgements<EmitEvents>,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   > {
     this.flags.timeout = timeout;
     return this;
@@ -991,8 +1006,8 @@ export class Socket<
   /**
    * A reference to the request that originated the underlying Engine.IO Socket.
    */
-  public get request(): IncomingMessage {
-    return this.client.request;
+  public get request() {
+    return this.client.request as IncomingMessage & AdditionalRequestData;
   }
 
   /**

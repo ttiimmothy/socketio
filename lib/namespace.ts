@@ -31,13 +31,26 @@ export interface NamespaceReservedEventsMap<
   ListenEvents extends EventsMap,
   EmitEvents extends EventsMap,
   ServerSideEvents extends EventsMap,
-  SocketData
+  SocketData,
+  AdditionalRequestData
 > {
   connect: (
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ) => void;
   connection: (
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ) => void;
 }
 
@@ -45,20 +58,28 @@ export interface ServerReservedEventsMap<
   ListenEvents extends EventsMap,
   EmitEvents extends EventsMap,
   ServerSideEvents extends EventsMap,
-  SocketData
+  SocketData,
+  AdditionalRequestData
 > extends NamespaceReservedEventsMap<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   > {
   new_namespace: (
-    namespace: Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    namespace: Namespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ) => void;
 }
 
 export const RESERVED_EVENTS: ReadonlySet<string | Symbol> = new Set<
-  keyof ServerReservedEventsMap<never, never, never, never>
+  keyof ServerReservedEventsMap<never, never, never, never, never>
 >(<const>["connect", "connection", "new_namespace"]);
 
 /**
@@ -118,7 +139,8 @@ export class Namespace<
   ListenEvents extends EventsMap = DefaultEventsMap,
   EmitEvents extends EventsMap = ListenEvents,
   ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any
+  SocketData = any,
+  AdditionalRequestData = Record<string, never>
 > extends StrictEventEmitter<
   ServerSideEvents,
   RemoveAcknowledgements<EmitEvents>,
@@ -126,13 +148,20 @@ export class Namespace<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >
 > {
   public readonly name: string;
   public readonly sockets: Map<
     SocketId,
-    Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
 
   public adapter: Adapter;
@@ -142,13 +171,20 @@ export class Namespace<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >;
 
   /** @private */
   _fns: Array<
     (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >,
       next: (err?: ExtendedError) => void
     ) => void
   > = [];
@@ -163,7 +199,13 @@ export class Namespace<
    * @param name
    */
   constructor(
-    server: Server<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+    server: Server<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     name: string
   ) {
     super();
@@ -199,7 +241,13 @@ export class Namespace<
    */
   public use(
     fn: (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >,
       next: (err?: ExtendedError) => void
     ) => void
   ): this {
@@ -215,7 +263,13 @@ export class Namespace<
    * @private
    */
   private run(
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     fn: (err: ExtendedError | null) => void
   ) {
     const fns = this._fns.slice(0);
@@ -313,10 +367,22 @@ export class Namespace<
    * @private
    */
   async _add(
-    client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
+    client: Client<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     auth: Record<string, unknown>,
     fn: (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >
     ) => void
   ) {
     debug("adding socket to nsp %s", this.name);
@@ -358,7 +424,13 @@ export class Namespace<
   }
 
   private async _createSocket(
-    client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
+    client: Client<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     auth: Record<string, unknown>
   ) {
     const sessionId = auth.pid;
@@ -384,9 +456,21 @@ export class Namespace<
   }
 
   private _doConnect(
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     fn: (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >
     ) => void
   ) {
     // track socket
@@ -410,7 +494,13 @@ export class Namespace<
    * @private
    */
   _remove(
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ): void {
     if (this.sockets.has(socket.id)) {
       this.sockets.delete(socket.id);

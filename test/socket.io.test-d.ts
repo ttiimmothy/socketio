@@ -625,4 +625,62 @@ describe("server", () => {
       io.adapter((nsp) => "nope");
     });
   });
+
+  describe("socket.data", () => {
+    it("works when typed", () => {
+      const io = new Server<
+        {},
+        {},
+        {},
+        {
+          foo: string;
+          bar: number;
+        }
+      >();
+
+      io.on("connection", (socket) => {
+        expectType<string>(socket.data.foo);
+        expectType<number>(socket.data.bar);
+        // @ts-expect-error - attribute is unknown
+        console.log(socket.data.baz);
+      });
+    });
+
+    it("works when untyped", () => {
+      const io = new Server();
+
+      io.on("connection", (socket) => {
+        expectType<any>(socket.data.foo);
+        expectType<any>(socket.data.bar);
+      });
+    });
+  });
+
+  describe("socket.request", () => {
+    it("works when typed", () => {
+      const io = new Server<
+        {},
+        {},
+        {},
+        {},
+        {
+          user: {
+            id: string;
+          };
+          session: {
+            foo: number;
+            bar: boolean;
+          };
+        }
+      >();
+
+      io.on("connection", (socket) => {
+        expectType<string>(socket.request.user.id);
+        expectType<number>(socket.request.session.foo);
+        expectType<boolean>(socket.request.session.bar);
+        // @ts-expect-error - attribute is unknown
+        console.log(socket.request.session.baz);
+      });
+    });
+  });
 });

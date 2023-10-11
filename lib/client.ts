@@ -29,7 +29,8 @@ export class Client<
   ListenEvents extends EventsMap,
   EmitEvents extends EventsMap,
   ServerSideEvents extends EventsMap,
-  SocketData = any
+  SocketData = any,
+  AdditionalRequestData = Record<string, never>
 > {
   public readonly conn: RawSocket;
 
@@ -38,17 +39,30 @@ export class Client<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >;
   private readonly encoder: Encoder;
   private readonly decoder: Decoder;
   private sockets: Map<
     SocketId,
-    Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
   private nsps: Map<
     string,
-    Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
   private connectTimeout?: NodeJS.Timeout;
 
@@ -60,7 +74,13 @@ export class Client<
    * @package
    */
   constructor(
-    server: Server<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+    server: Server<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >,
     conn: any
   ) {
     this.server = server;
@@ -125,7 +145,13 @@ export class Client<
       auth,
       (
         dynamicNspName:
-          | Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+          | Namespace<
+              ListenEvents,
+              EmitEvents,
+              ServerSideEvents,
+              SocketData,
+              AdditionalRequestData
+            >
           | false
       ) => {
         if (dynamicNspName) {
@@ -185,7 +211,13 @@ export class Client<
    * @private
    */
   _remove(
-    socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    socket: Socket<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ): void {
     if (this.sockets.has(socket.id)) {
       const nsp = this.sockets.get(socket.id)!.nsp.name;

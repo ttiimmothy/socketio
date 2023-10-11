@@ -30,15 +30,34 @@ export class ParentNamespace<
   ListenEvents extends EventsMap = DefaultEventsMap,
   EmitEvents extends EventsMap = ListenEvents,
   ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any
-> extends Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData> {
+  SocketData = any,
+  AdditionalRequestData = Record<string, never>
+> extends Namespace<
+  ListenEvents,
+  EmitEvents,
+  ServerSideEvents,
+  SocketData,
+  AdditionalRequestData
+> {
   private static count: number = 0;
   private children: Set<
-    Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    Namespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Set();
 
   constructor(
-    server: Server<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    server: Server<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   ) {
     super(server, "/_" + ParentNamespace.count++);
   }
@@ -69,7 +88,13 @@ export class ParentNamespace<
 
   createChild(
     name: string
-  ): Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData> {
+  ): Namespace<
+    ListenEvents,
+    EmitEvents,
+    ServerSideEvents,
+    SocketData,
+    AdditionalRequestData
+  > {
     debug("creating child namespace %s", name);
     const namespace = new Namespace(this.server, name);
     namespace._fns = this._fns.slice(0);

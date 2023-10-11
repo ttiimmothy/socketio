@@ -138,7 +138,8 @@ export class Server<
   ListenEvents extends EventsMap = DefaultEventsMap,
   EmitEvents extends EventsMap = ListenEvents,
   ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any
+  SocketData = any,
+  AdditionalRequestData = Record<string, never>
 > extends StrictEventEmitter<
   ServerSideEvents,
   RemoveAcknowledgements<EmitEvents>,
@@ -146,14 +147,16 @@ export class Server<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >
 > {
   public readonly sockets: Namespace<
     ListenEvents,
     EmitEvents,
     ServerSideEvents,
-    SocketData
+    SocketData,
+    AdditionalRequestData
   >;
   /**
    * A reference to the underlying Engine.IO server.
@@ -174,11 +177,23 @@ export class Server<
    */
   _nsps: Map<
     string,
-    Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    Namespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
   private parentNsps: Map<
     ParentNspNameMatchFn,
-    ParentNamespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    ParentNamespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
 
   /**
@@ -189,7 +204,13 @@ export class Server<
    */
   private parentNamespacesFromRegExp: Map<
     RegExp,
-    ParentNamespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+    ParentNamespace<
+      ListenEvents,
+      EmitEvents,
+      ServerSideEvents,
+      SocketData,
+      AdditionalRequestData
+    >
   > = new Map();
 
   private _adapter?: AdapterConstructor;
@@ -313,7 +334,13 @@ export class Server<
     auth: { [key: string]: any },
     fn: (
       nsp:
-        | Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+        | Namespace<
+            ListenEvents,
+            EmitEvents,
+            ServerSideEvents,
+            SocketData,
+            AdditionalRequestData
+          >
         | false
     ) => void
   ): void {
@@ -333,7 +360,7 @@ export class Server<
         if (this._nsps.has(name)) {
           // the namespace was created in the meantime
           debug("dynamic namespace %s already exists", name);
-          return fn(this._nsps.get(name) as Namespace);
+          return fn(this._nsps.get(name)!);
         }
         const namespace = this.parentNsps.get(nextFn.value)!.createChild(name);
         debug("dynamic namespace %s was created", name);
@@ -705,9 +732,21 @@ export class Server<
   public of(
     name: string | RegExp | ParentNspNameMatchFn,
     fn?: (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >
     ) => void
-  ): Namespace<ListenEvents, EmitEvents, ServerSideEvents, SocketData> {
+  ): Namespace<
+    ListenEvents,
+    EmitEvents,
+    ServerSideEvents,
+    SocketData,
+    AdditionalRequestData
+  > {
     if (typeof name === "function" || name instanceof RegExp) {
       const parentNsp = new ParentNamespace(this);
       debug("initializing parent namespace %s", parentNsp.name);
@@ -785,7 +824,13 @@ export class Server<
    */
   public use(
     fn: (
-      socket: Socket<ListenEvents, EmitEvents, ServerSideEvents, SocketData>,
+      socket: Socket<
+        ListenEvents,
+        EmitEvents,
+        ServerSideEvents,
+        SocketData,
+        AdditionalRequestData
+      >,
       next: (err?: ExtendedError) => void
     ) => void
   ): this {
